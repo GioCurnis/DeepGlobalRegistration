@@ -61,7 +61,7 @@ def registration_ransac_based_on_correspondence(pcd0, pcd1, idx0, idx1,
 
 
 class DeepGlobalRegistration:
-  def __init__(self, config, device=torch.device('cuda')):
+  def __init__(self, config, device=torch.device('cuda:0')):
     # Basic config
     self.config = config
     self.clip_weight_thresh = self.config.clip_weight_thresh
@@ -82,6 +82,7 @@ class DeepGlobalRegistration:
     assert os.path.exists(config.weights)
 
     state = torch.load(config.weights)
+
     network_config = state['config']
     self.network_config = network_config
     self.config.inlier_feature_type = network_config.inlier_feature_type
@@ -107,6 +108,13 @@ class DeepGlobalRegistration:
                                   conv1_kernel_size=network_config['conv1_kernel_size'],
                                   normalize_feature=network_config['normalize_feature'])
 
+    remove_key = state['state_dict'].pop('final.bias', None)
+
+    if remove_key != None:
+        print('final.bias has been removed from state_dict.')
+    else:
+        print('No key has been removed from state_dict.')
+
     self.fcgf_model.load_state_dict(state['state_dict'])
     self.fcgf_model = self.fcgf_model.to(device)
     self.fcgf_model.eval()
@@ -121,6 +129,13 @@ class DeepGlobalRegistration:
         conv1_kernel_size=network_config['inlier_conv1_kernel_size'],
         normalize_feature=False,
         D=6)
+
+    remove_key_inlier = state['state_dict_inlier'].pop('final.bias', None)
+
+    if remove_key_inlier != None:
+        print('final.bias has been removed from state_dict_inlier.')
+    else:
+        print('No key has been removed from state_dict_inlier.')
 
     self.inlier_model.load_state_dict(state['state_dict_inlier'])
     self.inlier_model = self.inlier_model.to(self.device)
@@ -145,7 +160,7 @@ class DeepGlobalRegistration:
 
     # Voxelization:
     # Maintain double type for xyz to improve numerical accuracy in quantization
-    sel = ME.utils.sparse_quantize(xyz / self.voxel_size, return_index=True)
+    _, sel = ME.utils.sparse_quantize(xyz / self.voxel_size, return_index=True)
     npts = len(sel)
 
     xyz = torch.from_numpy(xyz[sel])
@@ -160,7 +175,7 @@ class DeepGlobalRegistration:
     '''
     Step 1: extract fast and accurate FCGF feature per point
     '''
-    sinput = ME.SparseTensor(feats, coords=coords).to(self.device)
+    sinput = ME.SparseTensor(feats, coordinates=coords, device=self.device)
 
     return self.fcgf_model(sinput).F
 
@@ -207,7 +222,7 @@ class DeepGlobalRegistration:
     '''
     Step 4: predict inlier likelihood
     '''
-    sinput = ME.SparseTensor(inlier_feats, coords=coords).to(self.device)
+    sinput = ME.SparseTensor(inlier_feats, coordinates=coords, device=self.device)
     soutput = self.inlier_model(sinput)
 
     return soutput.F

@@ -40,9 +40,9 @@ if __name__ == '__main__':
   dgr = DeepGlobalRegistration(config)
   T01 = dgr.register(pcd0, pcd1)
 
-  o3d.visualization.draw_geometries([pcd0, pcd1])
+  #o3d.visualization.draw_geometries([pcd0, pcd1])
 
   pcd0.transform(T01)
   print(T01)
 
-  o3d.visualization.draw_geometries([pcd0, pcd1])
+  #o3d.visualization.draw_geometries([pcd0, pcd1])

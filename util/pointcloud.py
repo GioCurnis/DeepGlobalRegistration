@@ -5,6 +5,8 @@
 # - Christopher Choy, Jaesik Park, Vladlen Koltun, Fully Convolutional Geometric Features, ICCV 2019
 # - Christopher Choy, JunYoung Gwak, Silvio Savarese, 4D Spatio-Temporal ConvNets: Minkowski Convolutional Neural Networks, CVPR 2019
 import copy
+import logging
+
 import numpy as np
 import math
 
@@ -85,7 +87,6 @@ def get_matching_indices(source, target, trans, search_voxel_size, K=None):
   target_copy = copy.deepcopy(target)
   source_copy.transform(trans)
   pcd_tree = o3d.geometry.KDTreeFlann(target_copy)
-
   match_inds = []
   for i, point in enumerate(source_copy.points):
     [_, idx, _] = pcd_tree.search_radius_vector_3d(point, search_voxel_size)

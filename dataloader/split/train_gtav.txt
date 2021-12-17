@@ -1,0 +1,8 @@
+0,river_run_1
+1,river_run_2
+2,field_run_2
+3,forest_run_2
+4,selvino_run_1
+5,wild_reserve_run_2
+6,wild_reserve_run_1
+7,raton_canyon_run_2

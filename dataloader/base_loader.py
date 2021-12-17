@@ -31,6 +31,7 @@ class CollationFunctionFactory:
     else:
       raise ValueError(f'collation_type {collation_type} not found')
 
+
   def __call__(self, list_data):
     return self.collation_fn(list_data)
 
@@ -39,6 +40,7 @@ class CollationFunctionFactory:
 
   def collate_pair_fn(self, list_data):
     N = len(list_data)
+    logging.info(f'lunghezza N: {N}')
     list_data = [data for data in list_data if data is not None]
     if N != len(list_data):
       logging.info(f"Retain {len(list_data)} from {N} data.")

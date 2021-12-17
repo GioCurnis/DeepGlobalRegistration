@@ -111,6 +111,7 @@ misc_arg.add_argument('--val_num_workers', type=int, default=1)
 misc_arg.add_argument('--test_num_workers', type=int, default=2)
 misc_arg.add_argument('--fast_validation', type=str2bool, default=False)
 misc_arg.add_argument('--nn_max_n', type=int, default=250, help='The maximum number of features to find nearest neighbors in batch')
+misc_arg.add_argument('--file_folder_name', type=str, default=None)
 
 # Dataset specific configurations
 data_arg = add_argument_group('Data')

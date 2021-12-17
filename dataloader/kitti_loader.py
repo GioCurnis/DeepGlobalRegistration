@@ -4,6 +4,7 @@
 # - Christopher Choy, Wei Dong, Vladlen Koltun, Deep Global Registration, CVPR 2020
 # - Christopher Choy, Jaesik Park, Vladlen Koltun, Fully Convolutional Geometric Features, ICCV 2019
 # - Christopher Choy, JunYoung Gwak, Silvio Savarese, 4D Spatio-Temporal ConvNets: Minkowski Convolutional Neural Networks, CVPR 2019
+import logging
 import os
 import glob
 
@@ -17,9 +18,9 @@ kitti_icp_cache = {}
 class KITTIPairDataset(PairDataset):
   AUGMENT = None
   DATA_FILES = {
-      'train': './dataloader/split/train_kitti.txt',
-      'val': './dataloader/split/val_kitti.txt',
-      'test': './dataloader/split/test_kitti.txt'
+      'train': '/tmp/pycharm_project_153/dataloader/split/train_kitti.txt',
+      'val': '/tmp/pycharm_project_153/dataloader/split/val_kitti.txt',
+      'test': '/tmp/pycharm_project_153/dataloader/split/test_kitti.txt'
   }
   TEST_RANDOM_ROTATION = False
   IS_ODOMETRY = True
@@ -32,7 +33,8 @@ class KITTIPairDataset(PairDataset):
                manual_seed=False,
                config=None):
     # For evaluation, use the odometry dataset training following the 3DFeat eval method
-    self.root = root = config.kitti_dir + '/dataset'
+    self.root = root = config.kitti_dir
+    #  + '/dataset'
     random_rotation = self.TEST_RANDOM_ROTATION
     self.icp_path = config.icp_cache_path
     try:
@@ -55,6 +57,7 @@ class KITTIPairDataset(PairDataset):
           pair_time = time_diff + start_time
           if pair_time in inames:
             self.files.append((drive_id, start_time, pair_time))
+
 
   def get_all_scan_ids(self, drive_id):
     fnames = glob.glob(self.root + '/sequences/%02d/velodyne/*.bin' % drive_id)
@@ -123,6 +126,7 @@ class KITTIPairDataset(PairDataset):
   def __getitem__(self, idx):
     drive = self.files[idx][0]
     t0, t1 = self.files[idx][1], self.files[idx][2]
+
     all_odometry = self.get_video_odometry(drive, [t0, t1])
     positions = [self.odometry_to_positions(odometry) for odometry in all_odometry]
     fname0 = self._get_velodyne_fn(drive, t0)
@@ -140,8 +144,8 @@ class KITTIPairDataset(PairDataset):
     if key not in kitti_icp_cache:
       if not os.path.exists(filename):
         # work on the downsampled xyzs, 0.05m == 5cm
-        sel0 = ME.utils.sparse_quantize(xyz0 / 0.05, return_index=True)
-        sel1 = ME.utils.sparse_quantize(xyz1 / 0.05, return_index=True)
+        _, sel0 = ME.utils.sparse_quantize(xyz0 / 0.05, return_index=True)
+        _, sel1 = ME.utils.sparse_quantize(xyz1 / 0.05, return_index=True)
 
         M = (self.velo2cam @ positions[0].T @ np.linalg.inv(positions[1].T)
              @ np.linalg.inv(self.velo2cam)).T
@@ -185,8 +189,8 @@ class KITTIPairDataset(PairDataset):
     xyz0_th = torch.from_numpy(xyz0)
     xyz1_th = torch.from_numpy(xyz1)
 
-    sel0 = ME.utils.sparse_quantize(xyz0_th / self.voxel_size, return_index=True)
-    sel1 = ME.utils.sparse_quantize(xyz1_th / self.voxel_size, return_index=True)
+    _, sel0 = ME.utils.sparse_quantize(xyz0_th / self.voxel_size, return_index=True)
+    _, sel1 = ME.utils.sparse_quantize(xyz1_th / self.voxel_size, return_index=True)
 
     # Make point clouds using voxelized points
     pcd0 = make_open3d_point_cloud(xyz0[sel0])
@@ -239,7 +243,8 @@ class KITTINMPairDataset(KITTIPairDataset):
                random_scale=True,
                manual_seed=False,
                config=None):
-    self.root = root = os.path.join(config.kitti_dir, 'dataset')
+    #self.root = root = os.path.join(config.kitti_dir, 'dataset')
+    self.root = root = config.kitti_dir
     self.icp_path = os.path.join(config.kitti_dir, config.icp_cache_path)
     try:
       os.mkdir(self.icp_path)
@@ -277,6 +282,7 @@ class KITTINMPairDataset(KITTIPairDataset):
         if next_time in inames:
           self.files.append((drive_id, curr_time, next_time))
           curr_time = next_time + 1
+
 
     # Remove problematic sequence
     for item in [

@@ -14,6 +14,12 @@ from scipy.linalg import expm, norm
 def M(axis, theta):
   return expm(np.cross(np.eye(3), axis / norm(axis) * theta))
 
+def rand_trans(pcd, randg, rotation_range=360):
+  T = np.eye(4)
+  R = M(randg.rand(3) - 0.5, rotation_range * np.pi / 180.0 * (randg.rand(1) - 0.5))
+  T[:3, :3] = R
+  T[:3, 3] = randg.rand(3).T
+  return T
 
 def sample_random_trans(pcd, randg, rotation_range=360):
   T = np.eye(4)

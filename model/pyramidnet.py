@@ -15,7 +15,7 @@ from model.residual_block import get_block, conv, conv_tr, conv_norm_non
 class PyramidModule(ME.MinkowskiNetwork):
   NONLINEARITY = 'ELU'
   NORM_TYPE = 'BN'
-  REGION_TYPE = ME.RegionType.HYPERCUBE
+  REGION_TYPE = ME.RegionType.HYPER_CUBE
 
   def __init__(self,
                inc,
@@ -49,15 +49,8 @@ class PyramidModule(ME.MinkowskiNetwork):
             ])
     self.inner_module = inner_module
     self.convtr = nn.Sequential(
-        conv_tr(
-            in_channels=inner_outc,
-            out_channels=inner_outc,
-            kernel_size=3,
-            stride=2,
-            dilation=1,
-            has_bias=False,
-            region_type=self.REGION_TYPE,
-            dimension=dimension),
+        conv_tr(in_channels=inner_outc, out_channels=inner_outc, kernel_size=3, stride=2, dilation=1, has_bias=False,
+                region_type=self.REGION_TYPE, dimension=dimension),
         get_norm(
             self.NORM_TYPE, inner_outc, bn_momentum=bn_momentum, dimension=dimension),
         get_nonlinearity(self.NONLINEARITY))
@@ -93,7 +86,7 @@ class PyramidNet(ME.MinkowskiNetwork):
   DEPTHS = [1, 1, 1, 1]
   # None        b1, b2, b3, btr3, btr2
   #               1  2  3 -3 -2 -1
-  REGION_TYPE = ME.RegionType.HYPERCUBE
+  REGION_TYPE = ME.RegionType.HYPER_CUBE
 
   # To use the model, must call initialize_coords before forward pass.
   # Once data is processed, call clear to reset the model before calling initialize_coords

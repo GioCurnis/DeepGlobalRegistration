@@ -215,7 +215,7 @@ class WeightedProcrustesTrainer:
         # Inlier prediction with 6D ConvNet
         inlier_timer.tic()
         reg_sinput = ME.SparseTensor(reg_feats.contiguous(),
-                                     coords=reg_coords.int()).to(self.device)
+                                     coordinates=reg_coords.int(), device=self.device)
         reg_soutput = self.inlier_model(reg_sinput)
         inlier_timer.toc()
 
@@ -238,17 +238,22 @@ class WeightedProcrustesTrainer:
 
         # Get batch registration loss
         gt_rots, gt_trans = self.decompose_rotation_translation(input_dict['T_gt'])
+        logging.info(f'gt_rot: {gt_rots}, gt_trans: {gt_trans}')
         rot_error = batch_rotation_error(pred_rots, gt_rots)
         trans_error = batch_translation_error(pred_trans, gt_trans)
+        logging.info(f'rot_err: {rot_error}, trans_err: {trans_error}')
         individual_loss = rot_error + self.config.trans_weight * trans_error
-
+        logging.info(f'individual loss: {individual_loss}')
         # Select batches with at least 10 valid correspondences
         valid_mask = ws > 10
         num_valid = valid_mask.sum().item()
         average_valid_meter.update(num_valid)
-
+        logging.info(f'procrustes_loss_weight: {self.config.procrustes_loss_weight}')
         # Registration loss against registration GT
         loss = self.config.procrustes_loss_weight * individual_loss[valid_mask].mean()
+        logging.info(f'valid_mask: {valid_mask}')
+        logging.info(f'value: {individual_loss[valid_mask].mean()}')
+        logging.info(f'loss: {loss}')
         if not np.isfinite(loss.item()):
           max_val = loss.item()
           logging.info('Loss is infinite, abort ')
@@ -396,7 +401,7 @@ class WeightedProcrustesTrainer:
 
       inlier_timer.tic()
       reg_sinput = ME.SparseTensor(reg_feats.contiguous(),
-                                   coords=reg_coords.int()).to(self.device)
+                                   coordinates=reg_coords.int(), device=self.device)
       reg_soutput = self.inlier_model(reg_sinput)
       inlier_timer.toc()
 
@@ -492,6 +497,14 @@ class WeightedProcrustesTrainer:
     if config.resume is None and config.weights:
       logging.info("=> loading weights for inlier model '{}'".format(config.weights))
       checkpoint = torch.load(config.weights)
+
+      remove_key = checkpoint['state_dict'].pop('final.bias', None)
+
+      if remove_key != None:
+          print('final.bias has been removed from state_dict.')
+      else:
+          print('No key has been removed from state_dict.')
+
       self.feat_model.load_state_dict(checkpoint['state_dict'])
       logging.info("=> Loaded base model weights from '{}'".format(config.weights))
       if 'state_dict_inlier' in checkpoint:
@@ -630,10 +643,10 @@ class WeightedProcrustesTrainer:
   def generate_inlier_input(self, xyz0, xyz1, iC0, iC1, iF0, iF1, len_batch, pos_pairs):
     # pairs consist of (xyz1 index, xyz0 index)
     stime = time.time()
-    sinput0 = ME.SparseTensor(iF0, coords=iC0).to(self.device)
+    sinput0 = ME.SparseTensor(iF0, coordinates=iC0, device=self.device)
     oF0 = self.feat_model(sinput0).F
 
-    sinput1 = ME.SparseTensor(iF1, coords=iC1).to(self.device)
+    sinput1 = ME.SparseTensor(iF1, coordinates=iC1, device=self.device)
     oF1 = self.feat_model(sinput1).F
     feat_time = time.time() - stime
 

@@ -234,10 +234,10 @@ if __name__ == '__main__':
   # Load npz file with aformentioned format
   npz = np.load(args.npz)
   stats = npz['stats']
-
+  print(stats.shape)
   # Reserved only for making slides, will be skipped by default
-  stats[args.end_method_index:, :, 1] = np.inf
-  stats[args.end_method_index:, :, 2] = np.inf
+  #stats[args.end_method_index:, :, 1] = np.inf
+  #stats[args.end_method_index:, :, 2] = np.inf
 
   method_names = npz['names']
   scene_names = [
